@@ -71,7 +71,7 @@ export function NotificationsDropdown() {
                 return (
                   <button
                     key={n._id}
-                    onClick={() => { if (!n.isRead) markAsRead(n._id); }}
+                    onClick={() => { if (!n.isRead) markAsRead(n.nid); }}
                     className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer flex gap-3 ${n.isRead ? 'opacity-60' : ''}`}
                   >
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.isRead ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400'}`}>

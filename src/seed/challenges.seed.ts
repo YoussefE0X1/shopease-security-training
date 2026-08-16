@@ -79,17 +79,21 @@ const challenges = [
   },
   {
     key: 'idor-notification',
-    name: 'IDOR — Notification Detail Not Scoped',
+    name: 'IDOR — Mark Any User\'s Notification as Read',
     description:
-      'The notification LIST is scoped to the caller, but marking one as read is not — ' +
-      'an inconsistent-controls pattern. Any notification can be read/modified by id.',
+      'Notifications carry a sequential public number (nid) that appears in every ' +
+      'user\'s own notification list — the victim\'s ID is directly observable from ' +
+      'legitimate access, no guessing needed. PATCH /api/notifications/:nid/read ' +
+      'looks the notification up by nid with no ownership check, so any authenticated ' +
+      'user can mark any other user\'s notification as read. The only flaw involved ' +
+      'is the missing ownership check.',
     category: 'bac',
     difficulty: 2,
     challengeType: 'grey-box',
     tags: ['idor', 'notification', 'inconsistent'],
     owaspCategory: 'API1:2023 – BOLA',
     cwe: 'CWE-639',
-    endpoint: 'PATCH /api/notifications/:id/read',
+    endpoint: 'PATCH /api/notifications/:nid/read',
     httpMethod: 'PATCH',
   },
   {

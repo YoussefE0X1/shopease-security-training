@@ -8,7 +8,7 @@ import Cart from '../modules/cart/cart.model';
 import Order from '../modules/orders/order.model';
 import Review from '../modules/reviews/review.model';
 import Coupon from '../modules/coupons/coupon.model';
-import Notification from '../modules/notifications/notification.model';
+import Notification, { NotificationCounter } from '../modules/notifications/notification.model';
 import Challenge from '../modules/challenges/challenge.model';
 
 dotenv.config();
@@ -29,6 +29,7 @@ const run = async () => {
       Review.deleteMany({}),
       Coupon.deleteMany({}),
       Notification.deleteMany({}),
+      NotificationCounter.deleteMany({}),
       Challenge.deleteMany({}),
     ]);
     console.log('Database wiped');

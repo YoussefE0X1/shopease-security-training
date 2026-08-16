@@ -7,7 +7,7 @@ interface NotificationContextType {
   unreadCount: number;
   loading: boolean;
   fetchNotifications: () => Promise<void>;
-  markAsRead: (id: string) => Promise<void>;
+  markAsRead: (nid: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
 }
 
@@ -32,11 +32,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const markAsRead = useCallback(async (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+  const markAsRead = useCallback(async (nid: number) => {
+    setNotifications((prev) => prev.map((n) => (n.nid === nid ? { ...n, isRead: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
     try {
-      await api.patch(`/notifications/${id}/read`);
+      await api.patch(`/notifications/${nid}/read`);
     } catch {
       fetchNotifications();
     }

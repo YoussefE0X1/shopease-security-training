@@ -20,12 +20,18 @@ export const getMyNotifications = async (req: Request, res: Response, next: Next
   }
 };
 
-// VULNERABILITY (idor-notification): the list endpoint is scoped to the caller,
-// but this one is not — any notification can be read/marked by any user by id.
+// VULNERABILITY (idor-notification): notifications carry a sequential public
+// number (nid) — visible in any user's own notification list — and this
+// endpoint looks the notification up by nid with NO ownership check, so any
+// authenticated user can mark any other user's notification as read.
 export const markAsRead = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const notification = await Notification.findByIdAndUpdate(
-      req.params.id,
+    const nid = Number(req.params.nid);
+    if (!Number.isInteger(nid) || nid <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid notification id' });
+    }
+    const notification = await Notification.findOneAndUpdate(
+      { nid },
       { isRead: true },
       { new: true }
     );

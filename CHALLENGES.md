@@ -177,9 +177,9 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 - **Endpoints** `GET /api/users/profile?userId=`, `GET /api/cart?userId=` · **CWE-639**
 - An optional `userId` query parameter overrides the caller's identity: full profiles and carts of any user are readable.
 
-#### BAC-05 · IDOR — Notification Detail Not Scoped
-- **Endpoint** `PATCH /api/notifications/:id/read` · **CWE-639**
-- The list is scoped but the detail/mark-read is not — inconsistent control on the same resource. Any notification can be modified by id.
+#### BAC-05 · IDOR — Mark Any User's Notification as Read
+- **Endpoint** `PATCH /api/notifications/:nid/read` · **CWE-639**
+- Notifications carry a sequential public number (`nid`) that appears in every user's own notification list — the victim's ID is directly observable from legitimate access, no guessing needed. The mark-as-read endpoint looks the notification up by `nid` with no ownership check: any authenticated user can mark any other user's notification as read. The only flaw involved is the missing ownership check.
 
 #### BAC-06 · IDOR — Delete Any Review
 - **Endpoint** `DELETE /api/reviews/:id` · **CWE-639**

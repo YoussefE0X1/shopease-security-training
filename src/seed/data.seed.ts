@@ -8,7 +8,7 @@ import Coupon from '../modules/coupons/coupon.model';
 import Cart from '../modules/cart/cart.model';
 import Review from '../modules/reviews/review.model';
 import Order from '../modules/orders/order.model';
-import Notification from '../modules/notifications/notification.model';
+import Notification, { NotificationCounter } from '../modules/notifications/notification.model';
 
 dotenv.config();
 
@@ -189,6 +189,7 @@ export const run = async () => {
     await Review.deleteMany({});
     await Order.deleteMany({});
     await Notification.deleteMany({});
+    await NotificationCounter.deleteMany({});
     console.log('Cleared carts, reviews, orders, notifications');
 
     await Cart.create({ user: john._id, items: [], total: 0 });

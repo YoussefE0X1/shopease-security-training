@@ -49,7 +49,7 @@ export interface Coupon {
   expiresAt: string; isActive: boolean
 }
 export interface Notification {
-  _id: string; type: 'order' | 'promotion' | 'system'
+  _id: string; nid: number; type: 'order' | 'promotion' | 'system'
   title: string; message: string; isRead: boolean; createdAt: string
 }
 export interface AdminStats {
