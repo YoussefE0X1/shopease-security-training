@@ -74,6 +74,7 @@ Or with Docker: `docker compose up -d`
 1. Open **http://localhost:5173/challenges** — each entry explains the bug, its impact, and the affected endpoint.
 2. Every flaw is marked in the source with a `// VULNERABILITY (<key>)` comment for white-box practice.
 3. The database is not wiped on restart. Re-seed anytime with `npm run seed:all` or `npm run seed:reset`.
+4. External references for each vulnerability class: [resources](./resources/).
 
 ## API Overview
 
