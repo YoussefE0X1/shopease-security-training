@@ -72,7 +72,9 @@ export default function ProductDetailPage() {
     if (!product) return;
     const variantEntries = Object.entries(selectedVariants);
     const variant = variantEntries.length > 0 ? { name: variantEntries[0][0], label: variantEntries[0][1] } : undefined;
-    try { await addItem(product._id, 1, variant); showToast('Added to cart!', 'success'); }
+    // Sends the discounted unit price and the store discount rate exactly as
+    // displayed — the backend trusts both instead of re-deriving them.
+    try { await addItem(product._id, 1, variant, discountedVariantPrice, product.discountPercent ?? 5); showToast('Added to cart!', 'success'); }
     catch (err: any) { showToast(err?.message || 'Error', 'error'); }
   };
 
@@ -98,6 +100,10 @@ export default function ProductDetailPage() {
   };
 
   const currentStock = variantStock ?? product?.stock ?? 0;
+
+  // Legitimate store discount: the displayed price already includes the -5%.
+  const discountPercent = product?.discountPercent ?? 5;
+  const discountedVariantPrice = Math.round(variantPrice * (1 - discountPercent / 100) * 100) / 100;
 
   const myUserId = currentUser?._id || (currentUser as { id?: string } | null)?.id;
 
@@ -140,10 +146,13 @@ export default function ProductDetailPage() {
             <span className="text-sm text-gray-500 dark:text-gray-400">({product.numReviews} reviews)</span>
           </div>
 
-          <div className="flex items-baseline gap-3 mb-4">
-            <Price value={variantPrice} className="text-3xl" />
-            {product.comparePrice && <span className="text-lg text-gray-400 line-through">${product.comparePrice}</span>}
+          <div className="flex items-baseline gap-3 mb-1">
+            <Price value={discountedVariantPrice} className="text-3xl" />
+            {discountPercent > 0 && <span className="text-lg text-gray-400 line-through">${variantPrice.toFixed(2)}</span>}
           </div>
+          {discountPercent > 0 && (
+            <span className="inline-block text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-full px-2 py-0.5 mb-4">Save {discountPercent}% — store discount</span>
+          )}
 
           <SafeHtml html={product.description} className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6" />
 

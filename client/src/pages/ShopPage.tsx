@@ -49,10 +49,14 @@ export default function ShopPage() {
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
   useEffect(() => { api.get('/categories').then(({ data }) => setCategories(data.data)).catch(() => {}); }, []);
 
-  const handleAdd = async (id: string) => {
-    try { await addItem(id); showToast('Added to cart!', 'success'); }
-    catch (err: any) { showToast(err?.message || err?.data?.message || 'Error', 'error'); }
-  };
+// The legitimate 5% store discount every product carries: the card shows the
+// discounted price with a "-5%" badge and the catalog price struck through.
+const discountedPrice = (p: Product) => Math.round(p.price * (1 - (p.discountPercent || 0) / 100) * 100) / 100;
+
+const handleAdd = async (p: Product) => {
+  try { await addItem(p._id, 1, undefined, discountedPrice(p), p.discountPercent ?? 5); showToast('Added to cart!', 'success'); }
+  catch (err: any) { showToast(err?.message || err?.data?.message || 'Error', 'error'); }
+};
 
   return (
     <div>
@@ -104,10 +108,17 @@ export default function ShopPage() {
                   <span className="text-gray-400 dark:text-gray-500 ml-1">({p.numReviews})</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <Price value={p.price} />
-                  {p.comparePrice && <span className="text-xs text-gray-400 line-through">${p.comparePrice}</span>}
+                  <Price value={discountedPrice(p)} />
+                  {p.discountPercent ? (
+                    <span className="text-xs text-gray-400 line-through">${p.price.toFixed(2)}</span>
+                  ) : p.comparePrice ? (
+                    <span className="text-xs text-gray-400 line-through">${p.comparePrice}</span>
+                  ) : null}
+                  {p.discountPercent ? (
+                    <span className="ml-auto text-[11px] font-semibold text-green-600 bg-green-50 dark:bg-green-900/40 rounded-full px-1.5 py-0.5">-{p.discountPercent}%</span>
+                  ) : null}
                 </div>
-                <Button size="sm" className="w-full mt-3" onClick={() => handleAdd(p._id)} disabled={p.stock < 1}>
+                <Button size="sm" className="w-full mt-3" onClick={() => handleAdd(p)} disabled={p.stock < 1}>
                   {p.stock < 1 ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
               </div>

@@ -28,7 +28,10 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       }
     }
 
-    const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const subtotal = cart.items.reduce((sum, item) => {
+      const line = Math.round(item.price * item.quantity * (1 - (item.discountPercent ?? 0) / 100) * 100) / 100;
+      return sum + line;
+    }, 0);
 
     const appliedCoupons: any[] = [];
     let couponDiscount = 0;
@@ -72,10 +75,11 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       ? req.body.shippingCost
       : subtotal > 100 ? 0 : 10;
 
-    const total = Math.max(0, subtotal + shippingCost - discount);
+    const total = Math.max(0, Math.round((subtotal + shippingCost - discount) * 100) / 100);
 
     const orderItems = cart.items.map((item) => {
       const product = item.product as any;
+      const lineTotal = Math.round(item.price * item.quantity * (1 - (item.discountPercent ?? 0) / 100) * 100) / 100;
       return {
         product: product._id,
         name: product.name,
@@ -83,6 +87,8 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
         variant: item.variant,
         quantity: item.quantity,
         price: item.price,
+        discountPercent: item.discountPercent ?? 0,
+        lineTotal,
       };
     });
 

@@ -13,11 +13,36 @@ export const getCart = async (req: Request, res: Response, next: NextFunction) =
     if (!cart) {
       cart = await Cart.create({ user: targetId, items: [], total: 0 });
     }
-    sendSuccess(res, cart);
+    sendSuccess(res, serializeCart(cart));
   } catch (error) {
     next(error);
   }
 };
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// The per-line amount the client actually pays: unit price × quantity minus the
+// discount rate. Exposed in every cart response so the tester can read the
+// pricing formula (unit × qty × (1 − discountPercent/100)) straight from Burp.
+const lineTotal = (price: number, quantity: number, discountPercent: number) =>
+  round2(price * quantity * (1 - discountPercent / 100));
+
+const serializeCart = (cart: any) => ({
+  _id: cart._id,
+  user: cart.user,
+  total: cart.total,
+  createdAt: cart.createdAt,
+  updatedAt: cart.updatedAt,
+  items: (cart.items || []).map((item: any) => ({
+    _id: item._id,
+    product: item.product,
+    variant: item.variant,
+    quantity: item.quantity,
+    price: item.price,
+    discountPercent: item.discountPercent ?? 0,
+    lineTotal: lineTotal(item.price, item.quantity, item.discountPercent ?? 0),
+  })),
+});
 
 export const addToCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -30,6 +55,13 @@ export const addToCart = async (req: Request, res: Response, next: NextFunction)
     // as-is instead of the catalog price — an attacker adds an item with
     // "price": 0.01 and pays one cent for it.
     let price = typeof req.body.price === 'number' ? req.body.price : product.price;
+
+    // VULNERABILITY (trust-client-discount): the discountPercent sent by the
+    // client is trusted as-is instead of re-deriving it from the product
+    // catalog. The legitimate request carries the 5% store discount — an
+    // attacker raises it (5 → 90) and the line total collapses.
+    const discountPercent =
+      typeof req.body.discountPercent === 'number' ? req.body.discountPercent : (product.discountPercent ?? 0);
 
     // VULNERABILITY (quantity-not-validated): quantity is never validated —
     // negative, zero or decimal quantities are accepted, making the cart total
@@ -61,14 +93,17 @@ export const addToCart = async (req: Request, res: Response, next: NextFunction)
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
-      cart.items.push({ product: productId, quantity, variant, price });
+      cart.items.push({ product: productId, quantity, variant, price, discountPercent });
     }
 
-    cart.total = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    cart.total = cart.items.reduce(
+      (sum, item) => sum + lineTotal(item.price, item.quantity, item.discountPercent ?? 0),
+      0
+    );
     await cart.save();
 
     cart = await cart.populate('items.product', 'name price images stock slug');
-    sendSuccess(res, cart, 'Item added to cart');
+    sendSuccess(res, serializeCart(cart), 'Item added to cart');
   } catch (error) {
     next(error);
   }
@@ -86,11 +121,14 @@ export const updateCartItem = async (req: Request, res: Response, next: NextFunc
     if (quantity < 1) throw new ApiError(400, 'Quantity must be at least 1');
     item.quantity = quantity;
 
-    cart.total = cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    cart.total = cart.items.reduce(
+      (sum, i) => sum + lineTotal(i.price, i.quantity, i.discountPercent ?? 0),
+      0
+    );
     await cart.save();
 
     const populated = await cart.populate('items.product', 'name price images stock slug');
-    sendSuccess(res, populated, 'Cart updated');
+    sendSuccess(res, serializeCart(populated), 'Cart updated');
   } catch (error) {
     next(error);
   }
@@ -102,11 +140,14 @@ export const removeFromCart = async (req: Request, res: Response, next: NextFunc
     if (!cart) throw new ApiError(404, 'Cart not found');
 
     cart.items = cart.items.filter((item) => item._id?.toString() !== req.params.itemId);
-    cart.total = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    cart.total = cart.items.reduce(
+      (sum, item) => sum + lineTotal(item.price, item.quantity, item.discountPercent ?? 0),
+      0
+    );
     await cart.save();
 
     const populated = await cart.populate('items.product', 'name price images stock slug');
-    sendSuccess(res, populated, 'Item removed from cart');
+    sendSuccess(res, serializeCart(populated), 'Item removed from cart');
   } catch (error) {
     next(error);
   }

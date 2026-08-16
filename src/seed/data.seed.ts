@@ -158,12 +158,15 @@ export const run = async () => {
     console.log(`Seeded ${categories.length} categories`);
 
     // Products — internal fields (costPrice / internalNotes) are seeded here and
-    // returned by the product API (BOPLA: they should be admin-only).
+    // returned by the product API (BOPLA: they should be admin-only). Every
+    // product carries the legitimate 5% store discount that the frontend shows
+    // and sends along with the cart request (LOG-01: trusted client price).
     await Product.deleteMany({});
     const products = productsData.map((p, index) => ({
       ...p,
       category: categories[index % categories.length]._id,
       images: [],
+      discountPercent: 5,
       costPrice: Math.round(p.price * 0.62 * 100) / 100,
       internalNotes: `margin ${Math.round(38 + (index % 5) * 3)}% — renegotiate with supplier ${'ABCDE'[index % 5]} in Q4`,
     }));

@@ -6,6 +6,7 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   comparePrice?: number;
+  discountPercent: number;
   costPrice: number;
   internalNotes?: string;
   images: string[];
@@ -32,6 +33,11 @@ const productSchema = new Schema<IProduct>(
     description: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
     comparePrice: { type: Number, min: 0 },
+    // Legitimate store-wide discount (5%): a public business feature the
+    // frontend displays and sends along with the cart request. The backend
+    // should re-derive the discounted price from this field, but instead it
+    // trusts the client's copy (LOG-01: trusted client price & discount).
+    discountPercent: { type: Number, default: 5, min: 0, max: 100 },
     // Internal fields — the margin and the buyer's confidential notes should
     // never reach the public product API, but they ride along in the response
     // (BOPLA: broken object property level authorization).

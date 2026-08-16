@@ -8,7 +8,7 @@ export interface UserProfile extends User {
 }
 export interface Product {
   _id: string; name: string; slug: string; description: string
-  price: number; comparePrice?: number; images: string[]
+  price: number; comparePrice?: number; discountPercent?: number; images: string[]
   category: { _id: string; name: string; slug: string }
   tags: string[]; stock: number; sold: number; rating: number; numReviews: number
   isFeatured: boolean; isActive: boolean; createdAt: string
@@ -16,7 +16,8 @@ export interface Product {
 }
 export interface CartItem {
   _id: string; product: { _id: string; name: string; price: number; images: string[]; stock: number; slug: string }
-  quantity: number; price: number; variant?: { name: string; label: string }
+  quantity: number; price: number; discountPercent?: number; lineTotal?: number
+  variant?: { name: string; label: string }
 }
 export interface Cart { _id: string; items: CartItem[]; total: number }
 export interface StatusEntry {
@@ -33,6 +34,7 @@ export interface Order {
 }
 export interface OrderItem {
   product: string; name: string; image: string; quantity: number; price: number
+  discountPercent?: number; lineTotal?: number
   variant?: { name: string; label: string }
 }
 export interface Address {

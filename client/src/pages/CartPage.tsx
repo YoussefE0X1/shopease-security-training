@@ -37,7 +37,10 @@ export default function CartPage() {
     } catch {}
   };
 
-  const subtotal = cart?.items?.reduce((s, i) => s + i.price * i.quantity, 0) || 0;
+  // Each line total already includes the per-item discount rate the item was
+  // added with (unit price × qty × (1 − discountPercent/100)).
+  const subtotal = cart?.items?.reduce((s, i) => s + (i.lineTotal ?? Math.round(i.price * i.quantity * (1 - (i.discountPercent || 0) / 100) * 100) / 100), 0) || 0;
+  const itemDiscount = (cart?.items?.reduce((s, i) => s + i.price * i.quantity, 0) || 0) - subtotal;
   const shipping = subtotal > 100 ? 0 : 10;
   const total = Math.max(0, subtotal + shipping - couponDiscount);
 
@@ -121,13 +124,21 @@ export default function CartPage() {
                   <Link to={`/products/${item.product?._id}`} className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 line-clamp-1">
                     {item.product?.name}
                   </Link>
-                  <Price value={item.price} className="text-sm" />
+                  <div className="flex items-center gap-2">
+                    <Price value={item.price} className="text-sm" />
+                    {item.discountPercent ? (
+                      <span className="text-[11px] font-semibold text-green-600 bg-green-50 dark:bg-green-900/40 rounded-full px-1.5 py-0.5">-{item.discountPercent}%</span>
+                    ) : null}
+                  </div>
                   {item.variant && <p className="text-xs text-gray-400 dark:text-gray-500">{item.variant.name}: {item.variant.label}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="p-1.5 rounded-lg border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer" onClick={() => updateQty(item._id, item.quantity - 1)}><Minus size={14} /></button>
                   <span className="w-8 text-center text-sm font-medium text-gray-900 dark:text-gray-100">{item.quantity}</span>
                   <button className="p-1.5 rounded-lg border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer" onClick={() => updateQty(item._id, item.quantity + 1)}><Plus size={14} /></button>
+                </div>
+                <div className="text-right w-20">
+                  <Price value={item.lineTotal ?? Math.round(item.price * item.quantity * (1 - (item.discountPercent || 0) / 100) * 100) / 100} className="text-sm font-semibold" />
                 </div>
                 <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition cursor-pointer" onClick={() => removeItem(item._id)}><Trash2 size={18} /></button>
               </div>
@@ -139,6 +150,7 @@ export default function CartPage() {
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Order Summary</h3>
               <div className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
                 <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+                {itemDiscount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400"><span>Store discount</span><span>-${itemDiscount.toFixed(2)}</span></div>}
                 <div className="flex justify-between"><span className="text-gray-500 dark:text-gray-400">Shipping</span><span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span></div>
                 {couponDiscount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400"><span>Discount</span><span>-${couponDiscount.toFixed(2)}</span></div>}
                 <div className="border-t dark:border-gray-700 pt-2 flex justify-between font-semibold text-lg"><span>Total</span><span className="text-indigo-600 dark:text-indigo-400">${total.toFixed(2)}</span></div>
@@ -191,6 +203,7 @@ export default function CartPage() {
           </div>
           <div className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
             <div className="flex justify-between"><span>Items ({cart?.items?.length})</span><span>${subtotal.toFixed(2)}</span></div>
+            {itemDiscount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400"><span>Store discount</span><span>-${itemDiscount.toFixed(2)}</span></div>}
             <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span></div>
             {couponDiscount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400"><span>Discount</span><span>-${couponDiscount.toFixed(2)}</span></div>}
             <div className="border-t dark:border-gray-700 pt-2 flex justify-between font-bold text-lg"><span>Total</span><span className="text-indigo-600 dark:text-indigo-400">${total.toFixed(2)}</span></div>

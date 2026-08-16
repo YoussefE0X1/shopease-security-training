@@ -10,6 +10,8 @@ export interface IOrderItem {
   };
   quantity: number;
   price: number;
+  discountPercent: number;
+  lineTotal: number;
 }
 
 export interface IStatusEntry {
@@ -58,6 +60,10 @@ const orderSchema = new Schema<IOrder>(
         },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
+        // The discount rate and per-line total snapshot what was charged —
+        // whatever values were trusted at add-to-cart time (LOG-01).
+        discountPercent: { type: Number, default: 0 },
+        lineTotal: { type: Number, default: 0 },
       },
     ],
     shippingAddress: {

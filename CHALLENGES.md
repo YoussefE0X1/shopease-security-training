@@ -216,9 +216,10 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 ### 5.2 Business Logic (8)
 
-#### LOG-01 · Client-Supplied Price Trusted
+#### LOG-01 · Trusted Client Price & Discount (5% Store Discount)
 - **Endpoint** `POST /api/cart/items` · **CWE-840 / A04:2021**
-- `addToCart` uses the client's `price` instead of the catalog price. Add an item with `"price": 0.01` and pay one cent.
+- Every product shows a legitimate **5% store discount**. The normal add-to-cart request carries the discounted unit price and the `discountPercent` it displayed (`{"quantity": 2, "price": 55, "discountPercent": 5}`) — and the backend trusts both instead of re-deriving them from the catalog.
+- **Attack:** browse a product → add to cart while intercepting → the request contains the legitimate values → raise `discountPercent` (5 → 90) or lower `price` → forward → the cart total drops → checkout → the tampered amount persists into the **server-side order total** (not just a display change).
 
 #### LOG-02 · Client-Controlled Discount / Shipping / Coupon Stacking
 - **Endpoint** `POST /api/orders` · **CWE-840 / A04:2021**

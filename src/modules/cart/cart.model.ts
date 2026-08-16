@@ -9,6 +9,7 @@ export interface ICartItem {
   };
   quantity: number;
   price: number;
+  discountPercent: number;
 }
 
 export interface ICart extends Document {
@@ -31,6 +32,9 @@ const cartSchema = new Schema<ICart>(
         },
         quantity: { type: Number, required: true, default: 1 },
         price: { type: Number, required: true },
+        // Client-supplied discount rate stored as-is (LOG-01: trusted client
+        // price & discount) — should be re-derived from the product catalog.
+        discountPercent: { type: Number, default: 0 },
       },
     ],
     total: { type: Number, default: 0 },

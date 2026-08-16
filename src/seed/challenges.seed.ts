@@ -230,14 +230,18 @@ const challenges = [
   // ===== Business Logic =====
   {
     key: 'logic-trust-client-price',
-    name: 'Logic — Client-Supplied Price Trusted',
+    name: 'Logic — Trusted Client Price & Discount (5% Store Discount)',
     description:
-      'addToCart accepts a price field from the client and uses it as-is instead of the ' +
-      'catalog price. Add an item with "price": 0.01 and checkout pays one cent.',
+      'Every product carries a legitimate 5% store discount and the frontend sends the ' +
+      'discounted unit price together with the discountPercent it displayed (e.g. ' +
+      '{"quantity": 2, "price": 55, "discountPercent": 5}). The server trusts both values ' +
+      'instead of re-deriving them from the catalog. Intercept the add-to-cart request, ' +
+      'raise discountPercent (5 → 90) or lower the price, and forward — the tampered ' +
+      'value persists all the way into the created order total.',
     category: 'logic',
-    difficulty: 2,
+    difficulty: 3,
     challengeType: 'black-box',
-    tags: ['price-tampering', 'logic-flaw', 'ecommerce'],
+    tags: ['price-tampering', 'discount-tampering', 'logic-flaw', 'ecommerce'],
     owaspCategory: 'A04:2021 – Insecure Design',
     cwe: 'CWE-840',
     endpoint: 'POST /api/cart/items',

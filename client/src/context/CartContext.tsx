@@ -5,7 +5,7 @@ import type { Cart, CartItem } from '../types';
 interface CartContextType {
   cart: Cart | null; loading: boolean
   fetchCart: () => Promise<void>
-  addItem: (productId: string, quantity?: number, variant?: CartItem['variant']) => Promise<void>
+  addItem: (productId: string, quantity?: number, variant?: CartItem['variant'], price?: number, discountPercent?: number) => Promise<void>
   updateQty: (itemId: string, quantity: number) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
   clearCart: () => void
@@ -27,8 +27,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     finally { setLoading(false); }
   }, []);
 
-  const addItem = async (productId: string, quantity = 1, variant?: CartItem['variant']) => {
-    const { data } = await api.post('/cart/items', { product: productId, quantity, variant });
+  // The discounted unit price and the discountPercent the UI displayed are sent
+  // along — a legitimate request carries both business values (LOG-01 relies on
+  // the backend trusting them instead of re-deriving from the catalog).
+  const addItem = async (productId: string, quantity = 1, variant?: CartItem['variant'], price?: number, discountPercent?: number) => {
+    const { data } = await api.post('/cart/items', { product: productId, quantity, variant, price, discountPercent });
     setCart(data.data);
   };
 

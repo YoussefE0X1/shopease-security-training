@@ -61,7 +61,8 @@ export default function OrdersPage() {
                     <img src={item.image || 'https://placehold.co/40'} alt="" className="w-10 h-10 rounded-lg object-cover bg-gray-50" />
                     <span className="flex-1 text-gray-700 dark:text-gray-200">{item.name} {item.variant && <span className="text-gray-400 dark:text-gray-500">({item.variant.label})</span>}</span>
                     <span className="text-gray-500 dark:text-gray-400">x{item.quantity}</span>
-                    <Price value={item.price} />
+                    <Price value={item.lineTotal ?? item.price * item.quantity} />
+                    {item.discountPercent ? <span className="text-xs text-green-600">-{item.discountPercent}%</span> : null}
                   </div>
                 ))}
               </div>
