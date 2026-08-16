@@ -48,6 +48,15 @@ MONGODB_URI=mongodb://localhost:27017/ecommerce
 
 Or with Docker: `docker compose up -d`
 
+## Troubleshooting
+
+- **`Instance failed to start within 10000ms`** during `npm run setup` — the embedded MongoDB was slow to boot (first start after an abrupt shutdown replays the journal, which can exceed the default 10 s on low-end machines). The timeout is already raised to 120 s, so simply retry. If it keeps failing, make sure no other instance holds the data directory and remove stale locks, then retry:
+  ```bash
+  pkill -f "ts-node-dev" ; rm -f .mongodb-data/mongod.lock .mongodb-data/WiredTiger.lock ; npm run setup
+  ```
+- **`DBPathInUse`** — a backend is already running on this data directory. Stop it first (`Ctrl+C`), then re-seed.
+- **Port 5000/5173 already in use** — another instance is running; stop it or change `PORT` in `.env`.
+
 ## Tech Stack
 
 | Layer     | Tech                                              |

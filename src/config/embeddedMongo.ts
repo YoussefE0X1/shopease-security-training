@@ -45,7 +45,13 @@ export const startEmbeddedMongo = async (): Promise<MongoMemoryServer> => {
   try {
     server = await MongoMemoryServer.create({
       binary: { version: '7.0.14' },
-      instance: { dbPath: DATA_DIR, storageEngine: 'wiredTiger' },
+      instance: {
+        dbPath: DATA_DIR,
+        storageEngine: 'wiredTiger',
+        // Allow a slow start: on low-end machines the first boot after an abrupt
+        // shutdown replays the journal and can take longer than the 10s default.
+        launchTimeout: 120000,
+      },
     });
     console.log('[embedded-mongo] Embedded MongoDB started (no external MongoDB required)');
     console.log(`[embedded-mongo] Data directory: ${DATA_DIR} (progress persists across restarts)`);
@@ -53,6 +59,12 @@ export const startEmbeddedMongo = async (): Promise<MongoMemoryServer> => {
     return server;
   } catch (error) {
     console.error('[embedded-mongo] Failed to start embedded MongoDB:', error);
+    if (String(error).includes('10000ms') || String(error).includes('launchTimeout')) {
+      console.error('  → The start timed out (default 10s): slow machines or a stale lock from an');
+      console.error('    abrupt shutdown can delay the first boot. Try again now that the timeout');
+      console.error('    is raised, and make sure no other instance holds the data directory:');
+      console.error('      pkill -f "ts-node-dev" && rm -f .mongodb-data/mongod.lock .mongodb-data/WiredTiger.lock');
+    }
     console.error('  → The MongoDB binary is downloaded once on first run and needs internet access.');
     console.error('  → Alternative: install Docker and run `docker compose up -d`,');
     console.error('    or set MONGODB_URI in .env to a MongoDB you already have.');
