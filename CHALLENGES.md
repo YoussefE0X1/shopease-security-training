@@ -1,8 +1,6 @@
 # ShopEase — Access-Control & Business-Logic Training Platform
 
 > Full-stack e-commerce platform (Node.js / Express / TypeScript / MongoDB + React 19 / Vite / Tailwind) that looks and behaves like **hardened production code** — except for a deliberate, documented set of flaws in **Broken Access Control**, **Business Logic** and **Mass Assignment**.
->
-> Everything else (injection, XSS, JWT crypto, SSRF, SSTI, prototype pollution, CSRF, ...) is fixed exactly like a real secure application would be. The remaining bugs are the ones real pentests keep finding in production e-commerce sites.
 
 ---
 
@@ -16,9 +14,8 @@
   - [5.1 Broken Access Control (13)](#51-broken-access-control-13)
   - [5.2 Business Logic (8)](#52-business-logic-8)
   - [5.3 Mass Assignment (3)](#53-mass-assignment-3)
-- [6. What Was Fixed (Baseline Security)](#6-what-was-fixed-baseline-security)
-- [7. Chain Ideas](#7-chain-ideas)
-- [8. Seed Data & Reset](#8-seed-data--reset)
+- [6. Chain Ideas](#6-chain-ideas)
+- [7. Seed Data & Reset](#7-seed-data--reset)
 
 ---
 
@@ -265,25 +262,7 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 ---
 
-## 6. What Was Fixed (Baseline Security)
-
-These classes of vulnerability were deliberately removed — verifying they are NOT exploitable is part of the training (negative testing):
-
-| Class | Status |
-|-------|--------|
-| NoSQL injection (login, $where, blind) | ❌ Fixed — typed queries only |
-| XSS (stored, reflected, mutation) | ❌ Fixed — output escaped everywhere, no innerHTML |
-| JWT (none alg, alg confusion, JKU) | ❌ Fixed — strict verify, no jwks endpoint |
-| SSRF (import-image) | ❌ Fixed — loopback/private ranges always blocked |
-| SSTI (invoice) | ❌ Fixed — no template evaluation |
-| Prototype pollution | ❌ Fixed — no recursive merge anywhere |
-| ReDoS (coupon regex) | ❌ Fixed — no user-supplied regex |
-| Timing user-enum | ❌ Fixed — bcrypt always compared |
-| CSRF (change-password) | ❌ Fixed — Bearer auth only, current-password required |
-| Cookie-based sessions | ❌ Fixed — access tokens in memory only |
-| Legacy plaintext password | ❌ Fixed — removed |
-
-## 7. Chain Ideas
+## 6. Chain Ideas
 
 The catalog is designed to chain, the way real attacks do:
 
@@ -293,7 +272,7 @@ The catalog is designed to chain, the way real attacks do:
 4. **Single-use coupon → many redemptions:** BAC-02 (someone else's `PERSONAL-*`) + LOG-03 (race) + LOG-02 (stack it with others).
 5. **PII + business intelligence:** BAC-01 (order dump) + BAC-09 (stats) + BAC-12 (user list) → full customer database.
 
-## 8. Seed Data & Reset
+## 7. Seed Data & Reset
 
 ```bash
 npm run seed:data         # users, categories, products (with costPrice/internalNotes), coupons (incl. PERSONAL-*)
