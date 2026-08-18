@@ -91,7 +91,7 @@ export default function CartPage() {
           <CheckCircle size={40} className="text-green-600 dark:text-green-400" />
         </div>
         <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">Order Confirmed!</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-2">Order #{orderResult._id.slice(-8)}</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-2">Order #{orderResult.cardId}</p>
         <p className="text-gray-600 dark:text-gray-300 mb-6">Total paid: <strong>${orderResult.total.toFixed(2)}</strong></p>
         <div className="flex gap-3 justify-center">
           <Link to="/orders"><Button>View Orders</Button></Link>

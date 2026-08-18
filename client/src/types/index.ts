@@ -30,6 +30,7 @@ export interface Order {
   orderStatus: string; paymentStatus: string; createdAt: string
   statusHistory?: StatusEntry[]
   trackingNumber?: string
+  cardId?: string
   shippingAddress: { label: string; street: string; city: string; state: string; zip: string; country: string }
 }
 export interface OrderItem {

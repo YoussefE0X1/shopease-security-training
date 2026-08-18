@@ -16,10 +16,12 @@ const challenges = [
     key: 'idor-read-order',
     name: 'IDOR — Read Any Order (PII Disclosure)',
     description:
-      'Read any order by id. GET /api/orders/:id fetches the order without an ' +
-      'ownership check, and the response includes the buyer\'s full name, email ' +
-      'and shipping address. Order ids are MongoDB ObjectIds (timestamp-prefixed), ' +
-      'so they are enumerable.',
+      'Read any order. The public order number is the buyer\'s email encoded in ' +
+      'Base64URL (no padding) — your own order number is shown in the order ' +
+      'notification and the orders list. GET /api/orders/:id decodes the number ' +
+      'back to the email and fetches the order by it WITHOUT an ownership check, ' +
+      'so any logged-in user can read any order, including the buyer\'s name, ' +
+      'email and shipping address.',
     category: 'bac',
     difficulty: 3,
     challengeType: 'grey-box',

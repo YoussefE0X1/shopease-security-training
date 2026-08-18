@@ -159,8 +159,8 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 #### BAC-01 · IDOR — Read Any Order (PII Disclosure)
 - **Endpoint** `GET /api/orders/:id` · **CWE-639 / API1:2023 BOLA**
-- The order is fetched by id without an ownership check. The response includes the buyer's name, email and shipping address.
-- Order ids are MongoDB ObjectIds — timestamp-prefixed and trivially enumerable.
+- The order is fetched by its public number without an ownership check. The response includes the buyer's name, email and shipping address.
+- The order number is the buyer's email in Base64URL (no padding) — no guessing or enumeration needed: the buyer's own order notification shows it.
 
 #### BAC-02 · IDOR — Predictable Personal Coupon Codes
 - **Endpoint** `POST /api/orders` · **CWE-639 / API1:2023 BOLA**

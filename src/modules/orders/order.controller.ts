@@ -96,6 +96,7 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
     // the request body — the client can create an order already marked "paid".
     const order = await Order.create({
       user: req.user!.userId,
+      orderEmail: user.email,
       items: orderItems,
       shippingAddress: {
         label: address.label,
@@ -143,7 +144,7 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       user: req.user!.userId,
       type: 'order',
       title: 'Order Confirmed',
-      message: `Your order #${order._id} has been placed successfully. Total: $${total}`,
+      message: `Your order #${order.cardId} has been placed successfully. Total: $${total}`,
       metadata: { orderId: order._id },
     });
 
@@ -169,15 +170,46 @@ export const getMyOrders = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// VULNERABILITY (idor-read-order): the order is fetched by id alone with no
-// ownership check — any authenticated user can read any order, including the
-// buyer's full name, email and shipping address (PII disclosure).
+// VULNERABILITY (idor-read-order): the public order number is the buyer's
+// email encoded in Base64URL (no padding). It is decoded back to the email and
+// the order is fetched by that email alone — there is NO ownership check, so
+// any authenticated user can read any order, including the buyer's name, email
+// and shipping address (PII disclosure).
 export const getOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'name email');
+    const email = Buffer.from(String(req.params.id), 'base64url').toString('utf8');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Invalid order id');
+
+    const order = await Order.findOne({ orderEmail: email })
+      .sort('-createdAt')
+      .populate('user', 'name');
     if (!order) throw new ApiError(404, 'Order not found');
 
-    sendSuccess(res, { order });
+    sendSuccess(res, {
+      order: {
+        cardId: order.cardId,
+        email: order.orderEmail,
+        name: (order.user as any)?.name,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+        orderStatus: order.orderStatus,
+        total: order.total,
+        discount: order.discount,
+        items: order.items.map((item) => ({
+          image: item.image,
+          name: item.name,
+          variant: item.variant,
+          quantity: item.quantity,
+          lineTotal: item.lineTotal,
+          discountPercent: item.discountPercent,
+        })),
+        statusHistory: order.statusHistory.map((entry) => ({
+          status: entry.status,
+          timestamp: entry.timestamp,
+          note: entry.note,
+        })),
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -219,7 +251,7 @@ export const updateOrderStatus = async (req: Request, res: Response, next: NextF
       user: order.user,
       type: 'order',
       title: `Order ${orderStatus}`,
-      message: `Your order #${order._id} status has been updated to ${orderStatus}.`,
+      message: `Your order #${order.cardId} status has been updated to ${orderStatus}.`,
       metadata: { orderId: order._id, orderStatus },
     });
 
@@ -257,7 +289,7 @@ export const cancelOrder = async (req: Request, res: Response, next: NextFunctio
       user: req.user!.userId,
       type: 'order',
       title: 'Order Cancelled',
-      message: `Your order #${order._id} has been cancelled.`,
+      message: `Your order #${order.cardId} has been cancelled.`,
       metadata: { orderId: order._id },
     });
 

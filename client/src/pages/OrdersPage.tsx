@@ -50,7 +50,7 @@ export default function OrdersPage() {
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <div>
                   <span className="text-sm text-gray-400 dark:text-gray-500">Order #</span>
-                  <span className="text-sm font-mono font-medium text-gray-900 dark:text-gray-100">{o._id.slice(-8)}</span>
+                  <span className="text-sm font-mono font-medium text-gray-900 dark:text-gray-100">{o.cardId}</span>
                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-3">{formatDate(o.createdAt)}</span>
                 </div>
                 <Badge status={o.orderStatus} />

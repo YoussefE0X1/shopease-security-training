@@ -22,6 +22,9 @@ export interface IStatusEntry {
 
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
+  // The buyer's email, snapshotted at creation. The public order number
+  // (cardId) is this email in Base64URL — see the cardId virtual below.
+  orderEmail: string;
   items: IOrderItem[];
   shippingAddress: {
     label: string;
@@ -44,11 +47,15 @@ export interface IOrder extends Document {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  cardId?: string;
 }
 
 const orderSchema = new Schema<IOrder>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    // The buyer's email is stored on the order itself so it can be looked up
+    // directly from the decoded order number (see cardId virtual / GET /:id).
+    orderEmail: { type: String, index: true },
     items: [
       {
         product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -100,8 +107,14 @@ const orderSchema = new Schema<IOrder>(
     trackingNumber: { type: String },
     notes: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// The public order number: the buyer's email encoded in Base64URL (no padding),
+// e.g. victim@example.com -> dmljdGltQGV4YW1wbGUuY29t
+orderSchema.virtual('cardId').get(function () {
+  return this.orderEmail ? Buffer.from(this.orderEmail).toString('base64url') : '';
+});
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1 });
