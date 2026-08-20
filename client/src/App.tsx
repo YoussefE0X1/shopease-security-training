@@ -10,7 +10,6 @@ import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
-import OrderDetailPage from './pages/OrderDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import ChallengesPage from './pages/ChallengesPage';
@@ -50,7 +49,7 @@ export default function App() {
                     <Route path="/products/:id" element={<ProductDetailPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/orders" element={<OrdersPage />} />
-                    <Route path="/orders/:cardId" element={<OrderDetailPage />} />
+                    <Route path="/orders/:cardId" element={<OrdersPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/challenges" element={<ChallengesPage />} />
                   </Route>

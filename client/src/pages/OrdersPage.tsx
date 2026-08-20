@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import api from '../services/api';
 import { Badge } from '../components/ui/Badge';
@@ -10,14 +10,16 @@ import { OrderTimeline } from '../components/ui/OrderTimeline';
 import { useToast } from '../context/ToastContext';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDate } from '../utils/format';
-import type { Order } from '../types';
+import type { Order, OrderDetail } from '../types';
 
 export default function OrdersPage() {
+  const { cardId } = useParams();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [details, setDetails] = useState<Record<string, OrderDetail>>({});
   const { showToast } = useToast();
   const { fetchNotifications } = useNotifications();
-  const navigate = useNavigate();
 
   const fetchOrders = () => {
     api.get('/orders/mine?limit=50').then(({ data }) => setOrders(data.data)).catch(() => {})
@@ -25,6 +27,22 @@ export default function OrdersPage() {
   };
 
   useEffect(() => { fetchOrders(); }, []);
+
+  // The orders page lives at /orders/:cardId — open the most recent order by default.
+  useEffect(() => {
+    if (!loading && orders.length && !cardId) {
+      navigate(`/orders/${orders[0].cardId}`, { replace: true });
+    }
+  }, [loading, orders, cardId, navigate]);
+
+  const selectedId = cardId ?? orders[0]?.cardId;
+
+  useEffect(() => {
+    if (!selectedId || details[selectedId]) return;
+    api.get(`/orders/${selectedId}`)
+      .then(({ data }) => setDetails((prev) => ({ ...prev, [selectedId]: data.data.order })))
+      .catch((err: any) => showToast(err?.message || 'Failed to load order details', 'error'));
+  }, [selectedId]);
 
   const cancelOrder = async (id: string) => {
     try {
@@ -48,7 +66,14 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((o) => (
-            <div key={o._id} className="bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-700 p-5">
+            <div
+              key={o._id}
+              onClick={() => navigate(`/orders/${o.cardId}`)}
+              className={`bg-white dark:bg-gray-900 rounded-xl border p-5 cursor-pointer transition
+                ${selectedId === o.cardId
+                  ? 'border-indigo-400 dark:border-indigo-500 shadow-md'
+                  : 'dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
+            >
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <div>
                   <span className="text-sm text-gray-400 dark:text-gray-500">Order #</span>
@@ -78,13 +103,33 @@ export default function OrdersPage() {
                 <div className="flex gap-2">
                   {o.discount > 0 && <span className="text-xs text-green-600">-${o.discount.toFixed(2)}</span>}
                   {['pending', 'confirmed'].includes(o.orderStatus) && (
-                    <Button variant="danger" size="sm" onClick={() => cancelOrder(o._id)}>Cancel</Button>
+                    <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); cancelOrder(o._id); }}>Cancel</Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/orders/${o.cardId}`)}>View Details</Button>
                 </div>
               </div>
             </div>
           ))}
+          {selectedId && details[selectedId] && (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-700 p-5 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-3">
+                Order details — <span className="font-mono text-gray-700 dark:text-gray-200">{selectedId}</span>
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-1">Buyer</p>
+                  <p className="text-gray-900 dark:text-gray-100">{details[selectedId].name}</p>
+                  <p className="text-gray-600 dark:text-gray-300">{details[selectedId].email}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-1">Shipping Address</p>
+                  <p className="text-gray-900 dark:text-gray-100">{details[selectedId].shippingAddress.street}</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {details[selectedId].shippingAddress.city}, {details[selectedId].shippingAddress.state} {details[selectedId].shippingAddress.zip} — {details[selectedId].shippingAddress.country}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
