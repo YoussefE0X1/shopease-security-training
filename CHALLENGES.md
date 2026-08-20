@@ -164,7 +164,7 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 #### BAC-02 · IDOR — Predictable Personal Coupon Codes
 - **Endpoint** `POST /api/orders` · **CWE-639 / API1:2023 BOLA**
-- Personal coupons are generated with a predictable pattern `PERSONAL-<userId>` and are never bound to their owner. Enumerate a user id and redeem their personal discount.
+- Personal coupons are generated with a predictable pattern `PERSONAL-<userId>` and are bound to their owner in the data model (`userId`) — but redemption looks the coupon up by code alone and never verifies ownership. Enumerate a user id and redeem their personal discount.
 
 #### BAC-03 · IDOR — Update/Delete Any User's Address
 - **Endpoints** `PATCH /api/users/addresses/:addressId`, `DELETE /api/users/addresses/:addressId` · **CWE-639**

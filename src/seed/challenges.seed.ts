@@ -35,9 +35,10 @@ const challenges = [
     key: 'idor-personal-coupon',
     name: 'IDOR — Predictable Personal Coupon Codes',
     description:
-      'Personal coupons are issued with a predictable pattern PERSONAL-<userId> and are ' +
-      'never bound to their owner. Enumerate a user id and redeem their personal ' +
-      'discount on your own order.',
+      'Personal coupons are issued with a predictable pattern PERSONAL-<userId> ' +
+      'and are bound to their owner in the data model (userId field) — but ' +
+      'redemption looks the coupon up by code alone and never verifies ownership. ' +
+      'Enumerate a user id and redeem their personal discount on your own order.',
     category: 'bac',
     difficulty: 3,
     challengeType: 'black-box',

@@ -173,9 +173,10 @@ export const run = async () => {
     const seededProducts = await Product.insertMany(products);
     console.log(`Seeded ${seededProducts.length} products`);
 
-    // Coupons — including "personal" codes with a PREDICTABLE pattern
-    // (PERSONAL-<userId>) that are never bound to their owner: any user can
-    // redeem anyone else's personal coupon.
+    // Coupons — general ones (no userId) plus "personal" codes with a
+    // PREDICTABLE pattern (PERSONAL-<userId>) that ARE bound to their owner
+    // at creation via userId. Redemption never verifies that binding, so any
+    // user can redeem anyone else's personal coupon.
     await Coupon.deleteMany({});
     await Coupon.insertMany([
       { code: 'WELCOME10', type: 'percentage', value: 10, minOrderAmount: 50, usageLimit: 50, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
@@ -183,10 +184,10 @@ export const run = async () => {
       { code: 'FREESHIP', type: 'fixed', value: 10, minOrderAmount: 0, usageLimit: 50, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
       { code: 'NEW50', type: 'fixed', value: 50, minOrderAmount: 0, usageLimit: 3, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
       { code: 'TEST20', type: 'fixed', value: 20, minOrderAmount: 0, usageLimit: 10, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
-      { code: `PERSONAL-${admin._id}`, type: 'percentage', value: 25, minOrderAmount: 0, usageLimit: 1, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
-      { code: `PERSONAL-${john._id}`, type: 'percentage', value: 25, minOrderAmount: 0, usageLimit: 1, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true },
+      { code: `PERSONAL-${admin._id}`, type: 'percentage', value: 25, minOrderAmount: 0, usageLimit: 1, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true, userId: admin._id },
+      { code: `PERSONAL-${john._id}`, type: 'percentage', value: 25, minOrderAmount: 0, usageLimit: 1, usedCount: 0, expiresAt: new Date('2027-12-31'), isActive: true, userId: john._id },
     ]);
-    console.log('Seeded 7 coupons (2 personal, unbound)');
+    console.log('Seeded 7 coupons (5 general, 2 user-scoped)');
 
     await Cart.deleteMany({});
     await Review.deleteMany({});

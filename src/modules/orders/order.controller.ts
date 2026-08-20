@@ -42,6 +42,10 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
     const codes = Array.isArray(coupons) ? coupons : couponCode ? [couponCode] : [];
 
     for (const code of codes) {
+      // VULNERABILITY (idor-personal-coupon): user-scoped coupons are bound to
+      // their owner in the data model (userId), but redemption looks the coupon
+      // up by code alone — ownership is never verified, so any user can redeem
+      // anyone else's personal coupon on their own order.
       const coupon = await Coupon.findOne({ code: String(code).toUpperCase(), isActive: true });
       if (!coupon) throw new ApiError(400, `Invalid coupon code: ${code}`);
       if (coupon.expiresAt < new Date()) throw new ApiError(400, `Coupon ${coupon.code} has expired`);
