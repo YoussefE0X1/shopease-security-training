@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package } from 'lucide-react';
+import { Package, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../services/api';
 import { Badge } from '../components/ui/Badge';
 import { Price } from '../components/ui/Price';
@@ -9,11 +9,14 @@ import { OrderTimeline } from '../components/ui/OrderTimeline';
 import { useToast } from '../context/ToastContext';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDate } from '../utils/format';
-import type { Order } from '../types';
+import type { Order, OrderDetail } from '../types';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [details, setDetails] = useState<Record<string, OrderDetail>>({});
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const { showToast } = useToast();
   const { fetchNotifications } = useNotifications();
 
@@ -31,6 +34,19 @@ export default function OrdersPage() {
       fetchOrders();
       fetchNotifications();
     } catch (err: any) { showToast(err?.message || 'Error', 'error'); }
+  };
+
+  const toggleDetails = async (cardId: string) => {
+    if (expanded === cardId) { setExpanded(null); return; }
+    setExpanded(cardId);
+    if (!details[cardId]) {
+      setLoadingId(cardId);
+      try {
+        const { data } = await api.get(`/orders/${cardId}`);
+        setDetails((prev) => ({ ...prev, [cardId]: data.data.order }));
+      } catch (err: any) { showToast(err?.message || 'Failed to load details', 'error'); }
+      finally { setLoadingId(null); }
+    }
   };
 
   if (loading) return <PageSpinner />;
@@ -78,8 +94,34 @@ export default function OrdersPage() {
                   {['pending', 'confirmed'].includes(o.orderStatus) && (
                     <Button variant="danger" size="sm" onClick={() => cancelOrder(o._id)}>Cancel</Button>
                   )}
+                  <Button variant="outline" size="sm" onClick={() => toggleDetails(o.cardId!)}>
+                    {expanded === o.cardId ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    <span className="ml-1">{expanded === o.cardId ? 'Hide Details' : 'View Details'}</span>
+                  </Button>
                 </div>
               </div>
+              {expanded === o.cardId && (
+                <div className="border-t dark:border-gray-700 mt-3 pt-3 text-sm">
+                  {loadingId === o.cardId ? (
+                    <p className="text-gray-400 dark:text-gray-500">Loading details...</p>
+                  ) : details[o.cardId] ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Buyer</p>
+                        <p className="text-gray-900 dark:text-gray-100">{details[o.cardId].name}</p>
+                        <p className="text-gray-600 dark:text-gray-300">{details[o.cardId].email}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400 mb-1">Shipping Address</p>
+                        <p className="text-gray-900 dark:text-gray-100">{details[o.cardId].shippingAddress.street}</p>
+                        <p className="text-gray-600 dark:text-gray-300">
+                          {details[o.cardId].shippingAddress.city}, {details[o.cardId].shippingAddress.state} {details[o.cardId].shippingAddress.zip} — {details[o.cardId].shippingAddress.country}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           ))}
         </div>

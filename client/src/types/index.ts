@@ -33,6 +33,12 @@ export interface Order {
   cardId?: string
   shippingAddress: { label: string; street: string; city: string; state: string; zip: string; country: string }
 }
+export interface OrderDetail {
+  cardId: string; email: string; name: string
+  shippingAddress: Order['shippingAddress']
+  createdAt: string; orderStatus: string; total: number; discount: number
+  items: OrderItem[]; statusHistory?: StatusEntry[]
+}
 export interface OrderItem {
   product: string; name: string; image: string; quantity: number; price: number
   discountPercent?: number; lineTotal?: number
