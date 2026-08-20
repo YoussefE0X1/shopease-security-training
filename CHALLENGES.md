@@ -160,7 +160,7 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 #### BAC-01 · IDOR — Read Any Order (PII Disclosure)
 - **Endpoint** `GET /api/orders/:id` · **CWE-639 / API1:2023 BOLA**
 - The order is fetched by its public number without an ownership check. The response includes the buyer's name, email and shipping address.
-- The order number is the buyer's email in Base64URL (no padding) — no guessing or enumeration needed: the buyer's own order notification shows it.
+- The order number is the buyer's email plus a per-order token, in Base64URL (no padding) — no guessing or enumeration: the token is random, and your own order number is shown in your order notification and orders list.
 
 #### BAC-02 · IDOR — Predictable Personal Coupon Codes
 - **Endpoint** `POST /api/orders` · **CWE-639 / API1:2023 BOLA**

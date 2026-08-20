@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomBytes } from 'crypto';
 import Order from './order.model';
 import Cart from '../cart/cart.model';
 import Product from '../products/product.model';
@@ -97,6 +98,7 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
     const order = await Order.create({
       user: req.user!.userId,
       orderEmail: user.email,
+      orderToken: randomBytes(6).toString('hex'),
       items: orderItems,
       shippingAddress: {
         label: address.label,
@@ -171,16 +173,21 @@ export const getMyOrders = async (req: Request, res: Response, next: NextFunctio
 };
 
 // VULNERABILITY (idor-read-order): the public order number is the buyer's
-// email encoded in Base64URL (no padding). It is decoded back to the email and
-// the order is fetched by that email alone — there is NO ownership check, so
-// any authenticated user can read any order, including the buyer's name, email
-// and shipping address (PII disclosure).
+// email plus a per-order token, encoded in Base64URL (no padding). It is
+// decoded back to the email (and token when present) and the order is fetched
+// by those alone — there is NO ownership check, so any authenticated user can
+// read any order, including the buyer's name, email and shipping address
+// (PII disclosure).
 export const getOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const email = Buffer.from(String(req.params.id), 'base64url').toString('utf8');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Invalid order id');
+    const raw = Buffer.from(String(req.params.id), 'base64url').toString('utf8');
+    const [email, token] = raw.split(':');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Invalid order id');
 
-    const order = await Order.findOne({ orderEmail: email })
+    const filter: Record<string, unknown> = { orderEmail: email };
+    if (token) filter.orderToken = token;
+
+    const order = await Order.findOne(filter)
       .sort('-createdAt')
       .populate('user', 'name');
     if (!order) throw new ApiError(404, 'Order not found');

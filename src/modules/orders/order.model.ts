@@ -23,8 +23,12 @@ export interface IStatusEntry {
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
   // The buyer's email, snapshotted at creation. The public order number
-  // (cardId) is this email in Base64URL — see the cardId virtual below.
+  // (cardId) is the email plus a per-order token in Base64URL — see the
+  // cardId virtual below.
   orderEmail: string;
+  // Random per-order token — makes every order number unique (no guessing,
+  // no enumeration) while still decoding back to the buyer's email.
+  orderToken: string;
   items: IOrderItem[];
   shippingAddress: {
     label: string;
@@ -56,6 +60,8 @@ const orderSchema = new Schema<IOrder>(
     // The buyer's email is stored on the order itself so it can be looked up
     // directly from the decoded order number (see cardId virtual / GET /:id).
     orderEmail: { type: String, index: true },
+    // Random per-order token, unique per order (e.g. 12 hex chars).
+    orderToken: { type: String, index: true },
     items: [
       {
         product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -110,10 +116,14 @@ const orderSchema = new Schema<IOrder>(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// The public order number: the buyer's email encoded in Base64URL (no padding),
-// e.g. victim@example.com -> dmljdGltQGV4YW1wbGUuY29t
+// The public order number: the buyer's email plus a per-order token encoded
+// in Base64URL (no padding), e.g. "victim@example.com:1a2b3c4d5e6f" ->
+// dmljdGltQGV4YW1wbGUuY29tOjFhMmIzYzRkNWU2Zg== (unpadded). The token makes
+// every order number unique; decoding it always yields the buyer's email.
 orderSchema.virtual('cardId').get(function () {
-  return this.orderEmail ? Buffer.from(this.orderEmail).toString('base64url') : '';
+  if (!this.orderEmail) return '';
+  const suffix = this.orderToken ? ':' + this.orderToken : '';
+  return Buffer.from(this.orderEmail + suffix).toString('base64url');
 });
 
 orderSchema.index({ user: 1, createdAt: -1 });

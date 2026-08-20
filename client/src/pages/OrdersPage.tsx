@@ -9,17 +9,23 @@ import { Button } from '../components/ui/Button';
 import { OrderTimeline } from '../components/ui/OrderTimeline';
 import { useToast } from '../context/ToastContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { formatDate } from '../utils/format';
 import type { Order, OrderDetail } from '../types';
 
 export default function OrdersPage() {
   const { cardId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState<Record<string, OrderDetail>>({});
   const { showToast } = useToast();
   const { fetchNotifications } = useNotifications();
+
+  const emailId = user?.email
+    ? btoa(user.email).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
+    : '';
 
   const fetchOrders = () => {
     api.get('/orders/mine?limit=50').then(({ data }) => setOrders(data.data)).catch(() => {})
@@ -28,12 +34,13 @@ export default function OrdersPage() {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  // The orders page lives at /orders/:cardId — open the most recent order by default.
+  // The orders page lives at /orders/:id — by default it opens with the
+  // customer id (Base64URL of the buyer's email) and lists every order.
   useEffect(() => {
-    if (!loading && orders.length && !cardId) {
-      navigate(`/orders/${orders[0].cardId}`, { replace: true });
+    if (!loading && orders.length && !cardId && emailId) {
+      navigate(`/orders/${emailId}`, { replace: true });
     }
-  }, [loading, orders, cardId, navigate]);
+  }, [loading, orders, cardId, emailId, navigate]);
 
   const selectedId = cardId ?? orders[0]?.cardId;
 
