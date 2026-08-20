@@ -36,9 +36,12 @@ const challenges = [
     name: 'IDOR — Predictable Personal Coupon Codes',
     description:
       'Personal coupons are issued with a predictable pattern PERSONAL-<userId> ' +
-      'and are bound to their owner in the data model (userIds field) — but ' +
-      'redemption looks the coupon up by code alone and never verifies ownership. ' +
-      'Enumerate a user id and redeem their personal discount on your own order.',
+      'and are bound to their owner in the data model (userIds field) — the coupon ' +
+      'lands in the owner\'s wallet with a notification. But redemption looks the ' +
+      'coupon up by code alone and never verifies ownership, and the wallet rides ' +
+      'along inside the profile payload (GET /api/users/profile?userId= leaks the ' +
+      'target\'s coupon codes). Enumerate a user id and redeem their personal ' +
+      'discount on your own order.',
     category: 'bac',
     difficulty: 3,
     challengeType: 'black-box',

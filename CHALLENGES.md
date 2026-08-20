@@ -164,7 +164,7 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 #### BAC-02 · IDOR — Predictable Personal Coupon Codes
 - **Endpoint** `POST /api/orders` · **CWE-639 / API1:2023 BOLA**
-- Personal coupons are generated with a predictable pattern `PERSONAL-<userId>` and are bound to their owner in the data model (`userIds`) — but redemption looks the coupon up by code alone and never verifies ownership. Enumerate a user id and redeem their personal discount.
+- Personal coupons are generated with a predictable pattern `PERSONAL-<userId>`, bound to their owner in the data model (`userIds`) and delivered to the owner's wallet with a notification — but redemption looks the coupon up by code alone and never verifies ownership. The wallet also rides inside the profile payload (`GET /api/users/profile?userId=` leaks the target's coupon codes). Enumerate a user id and redeem their personal discount.
 
 #### BAC-03 · IDOR — Update/Delete Any User's Address
 - **Endpoints** `PATCH /api/users/addresses/:addressId`, `DELETE /api/users/addresses/:addressId` · **CWE-639**
@@ -172,7 +172,7 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 
 #### BAC-04 · IDOR — Trusted `userId` Query Parameter (Profile + Cart)
 - **Endpoints** `GET /api/users/profile?userId=`, `GET /api/cart?userId=` · **CWE-639**
-- An optional `userId` query parameter overrides the caller's identity: full profiles and carts of any user are readable.
+- An optional `userId` query parameter overrides the caller's identity: full profiles (including the coupon wallet and refreshToken) and carts of any user are readable.
 
 #### BAC-05 · IDOR — Mark Any User's Notification as Read
 - **Endpoint** `PATCH /api/notifications/:nid/read` · **CWE-639**

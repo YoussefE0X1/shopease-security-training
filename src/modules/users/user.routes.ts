@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  getProfile, updateProfile, addAddress, updateAddress, deleteAddress, toggleWishlist, getUsers, updateUserRole, deleteMyAccount, deleteUser,
+  getProfile, getMyWallet, updateProfile, addAddress, updateAddress, deleteAddress, toggleWishlist, getUsers, updateUserRole, deleteMyAccount, deleteUser,
 } from './user.controller';
 import { authenticate } from '../../shared/middleware/auth';
 import { validate } from '../../shared/middleware/validate';
@@ -8,6 +8,7 @@ import { validate } from '../../shared/middleware/validate';
 const router = Router();
 
 router.get('/profile', authenticate, getProfile);
+router.get('/wallet', authenticate, getMyWallet);
 router.patch('/profile', authenticate, updateProfile);
 
 router.post('/addresses', authenticate, validate([

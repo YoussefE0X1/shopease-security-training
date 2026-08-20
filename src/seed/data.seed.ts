@@ -151,7 +151,14 @@ export const run = async () => {
       internalNotes: 'Suspected chargeback fraud — review before refunds',
       addresses: [{ label: 'Home', street: '42 Second Ave', city: 'Alexandria', state: 'Alex', zip: '21500', country: 'Egypt', isDefault: true }],
     });
-    console.log('Seeded users: admin@shop.com / admin123, john@test.com / user123');
+    const tom1 = await User.create({
+      name: 'Tom One',
+      email: 'tom1@tom.com',
+      password: 'user123',
+      internalNotes: 'Marked for loyalty program review — spends 3x average',
+      addresses: [{ label: 'Egypt', street: 'Egypt', city: 'Egypt', state: 'Egypt', zip: '435345', country: 'Egypt', isDefault: false }],
+    });
+    console.log('Seeded users: admin@shop.com / admin123, john@test.com / user123, tom1@tom.com / user123');
 
     await Category.deleteMany({});
     const categories = await Category.insertMany(categoriesData);
@@ -195,6 +202,14 @@ export const run = async () => {
     await Notification.deleteMany({});
     await NotificationCounter.deleteMany({});
     console.log('Cleared carts, reviews, orders, notifications');
+
+    // Personal coupons land in their owner's wallet with an arrival
+    // notification — same flow the admin triggers from the UI.
+    await Notification.create([
+      { user: admin._id, type: 'promotion', title: 'New coupon for you!', message: `Coupon PERSONAL-${admin._id} (25% off) is now in your wallet`, metadata: { code: `PERSONAL-${admin._id}` } },
+      { user: john._id, type: 'promotion', title: 'New coupon for you!', message: `Coupon PERSONAL-${john._id} (25% off) is now in your wallet`, metadata: { code: `PERSONAL-${john._id}` } },
+    ]);
+    console.log('Seeded wallet coupon notifications');
 
     await Cart.create({ user: john._id, items: [], total: 0 });
 

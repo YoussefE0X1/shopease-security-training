@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, MapPin, Heart, Pencil, Plus, Trash2, Star, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, MapPin, Heart, Pencil, Plus, Trash2, Star, Lock, Eye, EyeOff, Wallet, Ticket } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,12 +8,14 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { PageSpinner } from '../components/ui/Spinner';
 import { Price } from '../components/ui/Price';
-import type { UserProfile, Address } from '../types';
+import { formatDate } from '../utils/format';
+import type { UserProfile, Address, Coupon } from '../types';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [wallet, setWallet] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'info' | 'addresses' | 'wishlist'>('info');
+  const [tab, setTab] = useState<'info' | 'addresses' | 'wishlist' | 'wallet'>('info');
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -39,7 +41,14 @@ export default function ProfilePage() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProfile(); }, []);
+  const fetchWallet = async () => {
+    try {
+      const { data } = await api.get('/users/wallet');
+      setWallet(data.data);
+    } catch { /* wallet is optional */ }
+  };
+
+  useEffect(() => { fetchProfile(); fetchWallet(); }, []);
 
   const saveProfile = async () => {
     setSaving(true);
@@ -99,6 +108,7 @@ export default function ProfilePage() {
     { key: 'info', label: 'Profile', icon: User },
     { key: 'addresses', label: `Addresses (${profile.addresses?.length || 0})`, icon: MapPin },
     { key: 'wishlist', label: `Wishlist (${profile.wishlist?.length || 0})`, icon: Heart },
+    { key: 'wallet', label: `Wallet (${wallet.length})`, icon: Wallet },
   ] as const;
 
   return (
@@ -269,6 +279,40 @@ export default function ProfilePage() {
                     <Price value={p.price} className="text-sm mt-1 inline-block" />
                     <Button size="sm" className="w-full mt-3">Add to Cart</Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'wallet' && (
+        <div>
+          <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-gray-100">My Coupon Wallet</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Coupons the admin created for you land here with a notification.</p>
+          {!wallet.length ? (
+            <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-2xl border dark:border-gray-700">
+              <Wallet size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">Your wallet is empty — no coupons yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wallet.map((c) => (
+                <div key={c._id} className="bg-white dark:bg-gray-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 p-5 relative overflow-hidden">
+                  <div className="absolute -right-3 -top-3 w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-full" />
+                  <div className="flex items-center gap-2 mb-3">
+                    <Ticket size={18} className="text-indigo-600 dark:text-indigo-400" />
+                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 text-sm break-all">{c.code}</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                    {c.type === 'percentage' ? `${c.value}% OFF` : `$${c.value} OFF`}
+                  </div>
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex justify-between"><span>Min order</span><span>${c.minOrderAmount || 0}</span></div>
+                    <div className="flex justify-between"><span>Uses left</span><span>{Math.max(0, c.usageLimit - c.usedCount)} / {c.usageLimit}</span></div>
+                    <div className="flex justify-between"><span>Expires</span><span>{formatDate(c.expiresAt)}</span></div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-700 text-xs text-emerald-600 dark:text-emerald-400 font-medium">Valid for your account</div>
                 </div>
               ))}
             </div>

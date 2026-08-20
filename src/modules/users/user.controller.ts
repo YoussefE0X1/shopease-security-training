@@ -1,18 +1,37 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../auth/user.model';
+import Coupon from '../coupons/coupon.model';
 import { ApiError } from '../../shared/utils/ApiError';
 import { sendSuccess } from '../../shared/utils/ApiResponse';
 
 // VULNERABILITY (idor-profile + bopla-sensitive-fields): the optional userId
 // query parameter overrides the caller's identity — any authenticated user can
 // read any user's full profile. The response also leaks the refreshToken and
-// internal admin notes (fields the owner should never see).
+// internal admin notes (fields the owner should never see) — and the target's
+// coupon wallet rides along, handing out their personal coupon codes.
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const targetId = (req.query.userId as string) || req.user!.userId;
     const user = await User.findById(targetId).select('+refreshToken +internalNotes').populate('wishlist');
     if (!user) throw new ApiError(404, 'User not found');
-    sendSuccess(res, user);
+
+    // The coupon wallet is derived from the coupon's owner binding (userIds)
+    // and is included in the profile payload — leaking it to any caller who
+    // can read the profile via ?userId=.
+    const coupons = await Coupon.find({ userIds: targetId, isActive: true }).sort('-createdAt');
+    sendSuccess(res, { ...user.toObject(), coupons });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Authenticated user's own coupon wallet: the coupons the admin created for
+// them (bound via userIds). No cross-user access here — ownership is fixed
+// to the caller's id.
+export const getMyWallet = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const coupons = await Coupon.find({ userIds: req.user!.userId, isActive: true }).sort('-createdAt');
+    sendSuccess(res, coupons);
   } catch (error) {
     next(error);
   }

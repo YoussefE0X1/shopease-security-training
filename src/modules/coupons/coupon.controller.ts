@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Coupon from './coupon.model';
+import Notification from '../notifications/notification.model';
 import { ApiError } from '../../shared/utils/ApiError';
 import { sendSuccess } from '../../shared/utils/ApiResponse';
 
@@ -24,6 +25,21 @@ export const createCoupon = async (req: Request, res: Response, next: NextFuncti
       expiresAt: new Date(expiresAt),
       userIds: scope,
     });
+
+    // The coupon lands in each target user's wallet and they get a
+    // notification about it (nid assigned by the counter pre-save hook).
+    if (scope.length > 0) {
+      const benefit = type === 'percentage' ? `${value}% off` : `$${value} off`;
+      for (const targetId of scope) {
+        await Notification.create({
+          user: targetId,
+          type: 'promotion',
+          title: 'New coupon for you!',
+          message: `Coupon ${coupon.code} (${benefit}) is now in your wallet`,
+          metadata: { couponId: coupon._id, code: coupon.code },
+        });
+      }
+    }
     sendSuccess(res, coupon, 'Coupon created', 201);
   } catch (error) {
     next(error);
