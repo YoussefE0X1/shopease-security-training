@@ -5,13 +5,15 @@ import { sendSuccess } from '../../shared/utils/ApiResponse';
 
 export const createCoupon = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { code, type, value, minOrderAmount, maxDiscount, usageLimit, expiresAt, userId } = req.body;
+    const { code, type, value, minOrderAmount, maxDiscount, usageLimit, expiresAt, userIds, userId } = req.body;
 
     const existing = await Coupon.findOne({ code: code.toUpperCase() });
     if (existing) throw new ApiError(400, `Coupon code "${code.toUpperCase()}" already exists`);
 
-    // A coupon can be created as general (no userId) or user-scoped: bound to
-    // a specific user at creation via userId (e.g. PERSONAL-<userId>).
+    // A coupon can be created as general (no users) or user-scoped: bound to
+    // one or more specific users at creation via userIds (e.g. PERSONAL-<id>,
+    // or a shared code granted to a small group of users).
+    const scope = userIds || (userId ? [userId] : []);
     const coupon = await Coupon.create({
       code: code.toUpperCase(),
       type,
@@ -20,7 +22,7 @@ export const createCoupon = async (req: Request, res: Response, next: NextFuncti
       maxDiscount,
       usageLimit: usageLimit || 1,
       expiresAt: new Date(expiresAt),
-      userId: userId || undefined,
+      userIds: scope,
     });
     sendSuccess(res, coupon, 'Coupon created', 201);
   } catch (error) {
@@ -42,9 +44,9 @@ export const validateCoupon = async (req: Request, res: Response, next: NextFunc
     const { code, orderTotal } = req.body;
 
     // VULNERABILITY (idor-personal-coupon): user-scoped coupons are bound to
-    // their owner in the data model (userId), but validation looks the coupon
-    // up by code alone — ownership is never verified. Any user can validate
-    // and redeem anyone else's personal coupon.
+    // their owners in the data model (userIds), but validation looks the
+    // coupon up by code alone — ownership is never verified. Any user can
+    // validate and redeem anyone else's personal coupon.
     const coupon = await Coupon.findOne({ code: String(code).toUpperCase(), isActive: true });
     if (!coupon) throw new ApiError(400, 'Invalid coupon code');
     if (coupon.expiresAt < new Date()) throw new ApiError(400, 'Coupon has expired');

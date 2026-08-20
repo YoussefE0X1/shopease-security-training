@@ -31,6 +31,8 @@ export default function AdminPage() {
   const [catForm, setCatForm] = useState({ name: '', description: '' });
 
   const [couponModal, setCouponModal] = useState(false);
+  const [couponScope, setCouponScope] = useState<'general' | 'users'>('general');
+  const [couponUserIds, setCouponUserIds] = useState<string[]>([]);
   const [userModal, setUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState('customer');
@@ -136,13 +138,18 @@ export default function AdminPage() {
     const fd = new FormData(e.currentTarget);
     const rawValue = parseFloat(fd.get('value') as string);
     if (isNaN(rawValue)) { showToast('Value must be a valid number', 'error'); return; }
-    const data = { code: fd.get('code'), type: fd.get('type'), value: rawValue, minOrderAmount: parseFloat(fd.get('minOrderAmount') as string) || 0, usageLimit: parseInt(fd.get('usageLimit') as string) || 1, expiresAt: fd.get('expiresAt') };
+    if (couponScope === 'users' && couponUserIds.length === 0) { showToast('Select at least one user for this coupon', 'error'); return; }
+    const data = { code: fd.get('code'), type: fd.get('type'), value: rawValue, minOrderAmount: parseFloat(fd.get('minOrderAmount') as string) || 0, usageLimit: parseInt(fd.get('usageLimit') as string) || 1, expiresAt: fd.get('expiresAt'), userIds: couponScope === 'users' ? couponUserIds : undefined };
     try {
       const { data: res } = await api.post('/coupons', data);
       setCoupons((c) => [res.data, ...c]);
       setCouponModal(false);
       showToast('Coupon created', 'success');
     } catch (err: any) { showToast(err?.message || 'Error', 'error'); }
+  };
+
+  const toggleCouponUser = (id: string) => {
+    setCouponUserIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
   };
 
   const changeUserRole = async () => {
@@ -305,7 +312,7 @@ export default function AdminPage() {
 
       {tab === 'coupons' && (
         <div>
-          <div className="flex justify-between items-center mb-4"><h2 className="font-semibold text-gray-900 dark:text-gray-100">Coupons</h2><Button onClick={() => setCouponModal(true)}><Plus size={16} /> Add Coupon</Button></div>
+          <div className="flex justify-between items-center mb-4"><h2 className="font-semibold text-gray-900 dark:text-gray-100">Coupons</h2><Button onClick={() => { setCouponScope('general'); setCouponUserIds([]); setCouponModal(true); }}><Plus size={16} /> Add Coupon</Button></div>
           <div className="space-y-3">
             {coupons.map((c) => (
               <div key={c._id} className="bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-700 p-4 flex items-center justify-between flex-wrap gap-3">
@@ -314,6 +321,13 @@ export default function AdminPage() {
                   <span className="text-sm text-gray-500 dark:text-gray-400 ml-3">{c.type === 'percentage' ? `${c.value}%` : `$${fmtPrice(c.value)}`}</span>
                   <span className="text-sm text-gray-400 dark:text-gray-500 ml-3">Used: {c.usedCount}/{c.usageLimit}</span>
                   <span className="text-sm text-gray-400 dark:text-gray-500 ml-3">Expires: {formatDate(c.expiresAt)}</span>
+                  {c.userIds && c.userIds.length > 0 ? (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 ml-2 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30">
+                      {c.userIds.length === 1 ? `For: ${users.find((u) => u._id === c.userIds?.[0])?.email || c.userIds[0]}` : `For ${c.userIds.length} users`}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">Everyone</span>
+                  )}
                   {!c.isActive && <span className="text-xs text-red-500 dark:text-red-400 ml-2">Inactive</span>}
                 </div>
                 <button className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 cursor-pointer" onClick={() => deleteCoupon(c._id)}><Trash2 size={16} /></button>
@@ -407,6 +421,29 @@ export default function AdminPage() {
           <Input label="Value" name="value" type="number" step="0.01" required />
           <div className="grid grid-cols-2 gap-4"><Input label="Min Order" name="minOrderAmount" type="number" defaultValue="0" /><Input label="Usage Limit" name="usageLimit" type="number" defaultValue="1" /></div>
           <Input label="Expiry Date" name="expiresAt" type="date" required />
+
+          <div className="space-y-1.5"><label className="text-sm font-medium text-gray-700 dark:text-gray-300">Who can use it?</label>
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <button type="button" className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition cursor-pointer ${couponScope === 'general' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`} onClick={() => setCouponScope('general')}>Everyone (general)</button>
+              <button type="button" className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition cursor-pointer ${couponScope === 'users' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`} onClick={() => setCouponScope('users')}>Specific users</button>
+            </div>
+          </div>
+
+          {couponScope === 'users' && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select users ({couponUserIds.length} selected)</label>
+              <div className="max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg divide-y dark:divide-gray-700">
+                {users.map((u) => (
+                  <label key={u._id} className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer ${couponUserIds.includes(u._id) ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                    <input type="checkbox" className="accent-indigo-600" checked={couponUserIds.includes(u._id)} onChange={() => toggleCouponUser(u._id)} />
+                    <span className="font-medium">{u.name}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">{u.email}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3"><Button type="submit">Save</Button><Button variant="outline" type="button" onClick={() => setCouponModal(false)}>Cancel</Button></div>
         </form>
       </Modal>

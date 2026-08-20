@@ -36,7 +36,7 @@ const challenges = [
     name: 'IDOR — Predictable Personal Coupon Codes',
     description:
       'Personal coupons are issued with a predictable pattern PERSONAL-<userId> ' +
-      'and are bound to their owner in the data model (userId field) — but ' +
+      'and are bound to their owner in the data model (userIds field) — but ' +
       'redemption looks the coupon up by code alone and never verifies ownership. ' +
       'Enumerate a user id and redeem their personal discount on your own order.',
     category: 'bac',

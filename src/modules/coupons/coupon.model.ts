@@ -10,9 +10,9 @@ export interface ICoupon extends Document {
   usedCount: number;
   expiresAt: Date;
   isActive: boolean;
-  // User-scoped coupons: bound to a specific user at creation. General
-  // coupons leave this empty and are available to everyone.
-  userId?: mongoose.Types.ObjectId;
+  // User-scoped coupons: bound to one or more specific users at creation.
+  // General coupons leave this empty and are available to everyone.
+  userIds: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,7 +30,7 @@ const couponSchema = new Schema<ICoupon>(
     isActive: { type: Boolean, default: true },
     // The owner binding is stored at creation, but redemption looks the coupon
     // up by code alone and never verifies ownership (see order.controller).
-    userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    userIds: { type: [Schema.Types.ObjectId], ref: 'User', index: true },
   },
   { timestamps: true }
 );

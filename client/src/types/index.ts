@@ -56,6 +56,7 @@ export interface Coupon {
   _id: string; code: string; type: 'percentage' | 'fixed'; value: number
   minOrderAmount?: number; maxDiscount?: number; usageLimit: number; usedCount: number
   expiresAt: string; isActive: boolean
+  userIds?: string[]
 }
 export interface Notification {
   _id: string; nid: number; type: 'order' | 'promotion' | 'system'
