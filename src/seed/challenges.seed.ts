@@ -33,19 +33,16 @@ const challenges = [
   },
   {
     key: 'idor-personal-coupon',
-    name: 'IDOR — Predictable Personal Coupon Codes',
+    name: 'BOLA — Stolen Targeted Personal Coupons',
     description:
-      'Personal coupons are issued with a predictable pattern PERSONAL-<userId> ' +
-      'and are bound to their owner in the data model (userIds field) — the coupon ' +
-      'lands in the owner\'s wallet with a notification. But redemption looks the ' +
-      'coupon up by code alone and never verifies ownership, and the wallet rides ' +
-      'along inside the profile payload (GET /api/users/profile?userId= leaks the ' +
-      'target\'s coupon codes). Enumerate a user id and redeem their personal ' +
-      'discount on your own order.',
+      'Exclusive coupons are issued specifically to targeted user accounts ' +
+      '(visible in their wallet/profile or exposed via API enumeration) but are ' +
+      'not strictly enforced during checkout. Steal a victim\'s personal coupon ' +
+      'and redeem their exclusive discount on your own order.',
     category: 'bac',
     difficulty: 3,
     challengeType: 'black-box',
-    tags: ['idor', 'coupon', 'enumerable'],
+    tags: ['idor', 'coupon', 'bola', 'broken-authz'],
     owaspCategory: 'API1:2023 – BOLA',
     cwe: 'CWE-639',
     endpoint: 'POST /api/orders',

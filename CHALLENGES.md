@@ -162,9 +162,9 @@ Every flaw is annotated in the source code with a `// VULNERABILITY (...)` comme
 - The order is fetched by its public number without an ownership check. The response includes the buyer's name, email and shipping address.
 - The order number is the buyer's email plus a per-order token, in Base64URL (no padding) — no guessing or enumeration: the token is random, and your own order number is shown in your order notification and orders list.
 
-#### BAC-02 · IDOR — Predictable Personal Coupon Codes
+#### BAC-02 · BOLA — Stolen Targeted Personal Coupons
 - **Endpoint** `POST /api/orders` · **CWE-639 / API1:2023 BOLA**
-- Personal coupons are generated with a predictable pattern `PERSONAL-<userId>`, bound to their owner in the data model (`userIds`) and delivered to the owner's wallet with a notification — but redemption looks the coupon up by code alone and never verifies ownership. The wallet also rides inside the profile payload (`GET /api/users/profile?userId=` leaks the target's coupon codes). Enumerate a user id and redeem their personal discount.
+- Exclusive coupons are issued specifically to targeted user accounts (visible in their wallet/profile or exposed via API enumeration) but are not strictly enforced during checkout — redemption looks the coupon up by code alone and never verifies ownership. Steal a victim's personal coupon and redeem their exclusive discount on your own order.
 
 #### BAC-03 · IDOR — Update/Delete Any User's Address
 - **Endpoints** `PATCH /api/users/addresses/:addressId`, `DELETE /api/users/addresses/:addressId` · **CWE-639**
